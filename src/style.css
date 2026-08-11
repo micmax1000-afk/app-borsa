@@ -1,0 +1,278 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: #131722;
+  color: #d1d4dc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Barra superiore */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  background: #1e222d;
+  border-bottom: 1px solid #2a2e39;
+}
+
+.topbar-symbol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: none;
+  border: none;
+  color: #d1d4dc;
+  padding: 2px 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.topbar-symbol-label {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.topbar-symbol-full {
+  font-size: 11px;
+  color: #787b86;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #d1d4dc;
+  font-size: 18px;
+  padding: 6px 8px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* Grafico */
+.chart-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+}
+
+.tradingview-widget-container,
+.tradingview-widget-container__widget {
+  height: 100%;
+  width: 100%;
+}
+
+/* Barra di navigazione in basso */
+.bottom-nav {
+  display: flex;
+  flex-shrink: 0;
+  background: #1e222d;
+  border-top: 1px solid #2a2e39;
+  padding: 4px 0 max(4px, env(safe-area-inset-bottom));
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: #787b86;
+  font-size: 10px;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.bottom-nav-item.active {
+  color: #2962ff;
+}
+
+.bottom-nav-icon {
+  font-size: 18px;
+}
+
+/* Drawer laterale (watchlist) */
+.drawer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 30;
+  display: flex;
+}
+
+.drawer {
+  background: #131722;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-left {
+  width: 80%;
+  max-width: 320px;
+  border-right: 1px solid #2a2e39;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid #2a2e39;
+}
+
+.drawer-header h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.watchlist-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+}
+
+.watchlist-list button,
+.search-results button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: #d1d4dc;
+  padding: 10px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.watchlist-list button.active {
+  background: #1e222d;
+}
+
+.watchlist-list button:active,
+.search-results button:active {
+  background: #1e222d;
+}
+
+.watchlist-item-label {
+  font-weight: 600;
+}
+
+.watchlist-item-symbol {
+  font-size: 11px;
+  color: #787b86;
+}
+
+/* Pannello segnale Compra/Vendi */
+.signal-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.signal-panel {
+  width: 100%;
+  height: 45%;
+  min-height: 180px;
+  max-height: 320px;
+  background: #131722;
+  border-top: 1px solid #2a2e39;
+  border-radius: 12px 12px 0 0;
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.signal-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.signal-disclaimer {
+  margin: 0;
+  font-size: 10px;
+  color: #787b86;
+}
+
+.signal-close {
+  background: none;
+  border: none;
+  color: #d1d4dc;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 4px 6px;
+}
+
+/* Ricerca a schermo intero */
+.search-overlay {
+  position: absolute;
+  inset: 0;
+  background: #131722;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #2a2e39;
+  flex-shrink: 0;
+}
+
+.search-header input {
+  flex: 1;
+  min-width: 0;
+  background: #1e222d;
+  border: 1px solid #2a2e39;
+  border-radius: 6px;
+  padding: 10px 10px;
+  color: #d1d4dc;
+  font-size: 14px;
+}
+
+.search-results {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.search-hint {
+  padding: 12px 10px;
+  font-size: 12px;
+  color: #787b86;
+}
