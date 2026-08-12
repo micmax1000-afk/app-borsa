@@ -27,7 +27,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  gap: 8px;
+  padding: 6px 10px;
   flex-shrink: 0;
   background: #1e222d;
   border-bottom: 1px solid #2a2e39;
@@ -43,6 +44,7 @@ body {
   padding: 2px 4px;
   cursor: pointer;
   text-align: left;
+  flex-shrink: 0;
 }
 
 .topbar-symbol-label {
@@ -56,6 +58,21 @@ body {
   color: #787b86;
 }
 
+.topbar-ticker {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.ticker-widget {
+  width: 100%;
+  height: 46px;
+  margin-top: -6px;
+}
+
 .icon-btn {
   background: none;
   border: none;
@@ -64,6 +81,7 @@ body {
   padding: 6px 8px;
   cursor: pointer;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 /* Grafico */
@@ -114,9 +132,16 @@ body {
 .drawer-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0);
   z-index: 30;
   display: flex;
+  pointer-events: none;
+  transition: background 0.25s ease;
+}
+
+.drawer-overlay.open {
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
 }
 
 .drawer {
@@ -124,6 +149,12 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+}
+
+.drawer-overlay.open .drawer {
+  transform: translateX(0);
 }
 
 .drawer-left {
@@ -150,6 +181,13 @@ body {
   margin: 0;
   padding: 4px;
   overflow-y: auto;
+}
+
+.watchlist-row,
+.search-result-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .watchlist-list button,
@@ -187,6 +225,25 @@ body {
   color: #787b86;
 }
 
+.watchlist-remove,
+.watchlist-add {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: #1e222d;
+  color: #787b86;
+  font-size: 14px;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.watchlist-add {
+  color: #2962ff;
+  font-size: 18px;
+}
+
 /* Pannello segnale Compra/Vendi */
 .signal-overlay {
   position: absolute;
@@ -194,7 +251,14 @@ body {
   display: flex;
   align-items: flex-end;
   z-index: 20;
+  background: rgba(0, 0, 0, 0);
+  pointer-events: none;
+  transition: background 0.25s ease;
+}
+
+.signal-overlay.open {
   background: rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
 }
 
 .signal-panel {
@@ -208,6 +272,12 @@ body {
   padding: 8px 12px 10px;
   display: flex;
   flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+}
+
+.signal-overlay.open .signal-panel {
+  transform: translateY(0);
 }
 
 .signal-panel-header {
@@ -241,6 +311,16 @@ body {
   z-index: 40;
   display: flex;
   flex-direction: column;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.search-overlay.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .search-header {
@@ -271,8 +351,183 @@ body {
   flex: 1;
 }
 
+.search-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #787b86;
+  padding: 10px 10px 4px;
+}
+
 .search-hint {
   padding: 12px 10px;
   font-size: 12px;
   color: #787b86;
+}
+
+/* Tema chiaro */
+body.theme-light {
+  background: #ffffff;
+  color: #131722;
+}
+
+body.theme-light .topbar,
+body.theme-light .bottom-nav,
+body.theme-light .drawer,
+body.theme-light .signal-panel,
+body.theme-light .search-overlay {
+  background: #f8f9fd;
+  border-color: #e0e3eb;
+  color: #131722;
+}
+
+body.theme-light .topbar-symbol,
+body.theme-light .icon-btn,
+body.theme-light .watchlist-list button,
+body.theme-light .search-results button,
+body.theme-light .signal-close,
+body.theme-light .list-tab {
+  color: #131722;
+}
+
+body.theme-light .topbar-symbol-full,
+body.theme-light .watchlist-item-symbol,
+body.theme-light .search-section-title,
+body.theme-light .search-hint,
+body.theme-light .signal-disclaimer,
+body.theme-light .list-hint {
+  color: #6a6d78;
+}
+
+body.theme-light .watchlist-list button.active,
+body.theme-light .watchlist-list button:active,
+body.theme-light .search-results button:active,
+body.theme-light .list-tab.active {
+  background: #e9ecf5;
+}
+
+body.theme-light .search-header input {
+  background: #ffffff;
+  border-color: #e0e3eb;
+  color: #131722;
+}
+
+body.theme-light .watchlist-remove,
+body.theme-light .reorder-btn,
+body.theme-light .multi-cell-header {
+  background: #eef0f6;
+  color: #6a6d78;
+}
+
+body.theme-light .multi-cell {
+  border-color: #e0e3eb;
+}
+
+/* Griglia multi-grafico */
+.multi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  height: 100%;
+  padding: 4px;
+}
+
+.multi-cell {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #2a2e39;
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.multi-cell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #1e222d;
+  flex-shrink: 0;
+}
+
+.multi-cycle-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.multi-cell-chart {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Tab liste watchlist */
+.list-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px 4px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.list-tab {
+  flex-shrink: 0;
+  background: #1e222d;
+  border: none;
+  border-radius: 14px;
+  color: #d1d4dc;
+  font-size: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.list-tab.active {
+  background: #2962ff;
+  color: #fff;
+}
+
+.list-tab-add {
+  font-weight: 700;
+}
+
+.list-hint {
+  margin: 0;
+  padding: 0 10px 6px;
+  font-size: 10px;
+  color: #787b86;
+}
+
+/* Riordino watchlist */
+.reorder-col {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.reorder-btn {
+  background: none;
+  border: none;
+  color: #787b86;
+  font-size: 9px;
+  padding: 2px 6px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.reorder-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* Pannello news (riusa lo stile del pannello segnale, più alto) */
+.news-panel {
+  height: 65%;
+  max-height: 520px;
 }

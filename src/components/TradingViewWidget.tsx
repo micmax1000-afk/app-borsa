@@ -2,6 +2,7 @@ import { useEffect, useRef, memo } from 'react'
 
 interface TradingViewWidgetProps {
   symbol: string
+  theme?: 'light' | 'dark'
 }
 
 /**
@@ -12,7 +13,7 @@ interface TradingViewWidgetProps {
  * mobili, Stocastico, ecc.), disegno di trendline, più timeframe,
  * confronto simboli, tutto gestito dall'utente direttamente nel grafico.
  */
-function TradingViewWidget({ symbol }: TradingViewWidgetProps) {
+function TradingViewWidget({ symbol, theme = 'dark' }: TradingViewWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -31,7 +32,7 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps) {
       symbol: symbol,
       interval: 'D',
       timezone: 'Europe/Rome',
-      theme: 'dark',
+      theme: theme,
       style: '1',
       locale: 'it',
       enable_publishing: false,
@@ -47,7 +48,7 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps) {
     })
 
     containerRef.current.appendChild(script)
-  }, [symbol])
+  }, [symbol, theme])
 
   return (
     <div className="tradingview-widget-container" ref={containerRef}>

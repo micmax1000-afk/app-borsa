@@ -1,1 +1,1 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/components/TechnicalAnalysisWidget.tsx","./src/components/TradingViewWidget.tsx"],"version":"5.9.3"}
+{"root":["./src/App.tsx","./src/main.tsx","./src/components/NewsWidget.tsx","./src/components/TechnicalAnalysisWidget.tsx","./src/components/TickerWidget.tsx","./src/components/TradingViewWidget.tsx"],"version":"5.9.3"}

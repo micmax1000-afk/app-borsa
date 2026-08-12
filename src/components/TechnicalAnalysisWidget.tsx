@@ -2,6 +2,7 @@ import { useEffect, useRef, memo } from 'react'
 
 interface TechnicalAnalysisWidgetProps {
   symbol: string
+  theme?: 'light' | 'dark'
 }
 
 /**
@@ -13,7 +14,7 @@ interface TechnicalAnalysisWidgetProps {
  * investimento. Non esegue operazioni: è puramente informativo.
  * Documentazione: https://www.tradingview.com/widget/technical-analysis/
  */
-function TechnicalAnalysisWidget({ symbol }: TechnicalAnalysisWidgetProps) {
+function TechnicalAnalysisWidget({ symbol, theme = 'dark' }: TechnicalAnalysisWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -33,11 +34,11 @@ function TechnicalAnalysisWidget({ symbol }: TechnicalAnalysisWidgetProps) {
       symbol: symbol,
       showIntervalTabs: true,
       locale: 'it',
-      colorTheme: 'dark'
+      colorTheme: theme
     })
 
     containerRef.current.appendChild(script)
-  }, [symbol])
+  }, [symbol, theme])
 
   return (
     <div className="tradingview-widget-container" ref={containerRef}>
