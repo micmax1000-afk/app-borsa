@@ -4,10 +4,14 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // Se pubblichi su GitHub Pages con repo "app-borsa", il base deve
 // corrispondere al nome del repository, es: '/app-borsa/'
-export default defineConfig({
-  base: '/app-borsa/',
+//
+// Con "--mode android" (npm run build:android) la build è per l'APK:
+// percorsi relativi e niente service worker, che dentro l'app non serve.
+export default defineConfig(({ mode }) => ({
+  base: mode === 'android' ? './' : '/app-borsa/',
   plugins: [
     react(),
+    mode !== 'android' &&
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png'],
@@ -33,4 +37,4 @@ export default defineConfig({
       }
     })
   ]
-})
+}))

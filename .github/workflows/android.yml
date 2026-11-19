@@ -1,0 +1,66 @@
+name: Crea APK Android
+
+# Crea l'APK a ogni push (e a richiesta dalla pagina Actions).
+# L'APK si scarica dalla pagina "Releases" del repository:
+# https://github.com/micmax1000-afk/app-borsa/releases/latest
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codice
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Build dell'app e sincronizzazione con Android
+        run: npm run build:android
+
+      - name: Crea l'APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Rinomina l'APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk app-borsa.apk
+
+      - name: Salva l'APK tra gli artifact della build
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-borsa-apk
+          path: app-borsa.apk
+
+      - name: Pubblica l'APK nella pagina Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete apk --cleanup-tag --yes || true
+          gh release create apk app-borsa.apk \
+            --target "$GITHUB_SHA" \
+            --title "App Borsa – APK Android (build ${GITHUB_RUN_NUMBER})" \
+            --notes "APK per uso personale, creato dal branch ${GITHUB_REF_NAME} (commit ${GITHUB_SHA::7}). Scaricalo dal telefono e aprilo per installarlo." \
+            --latest

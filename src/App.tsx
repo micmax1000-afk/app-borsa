@@ -3,6 +3,10 @@ import TradingViewWidget from './components/TradingViewWidget'
 import TechnicalAnalysisWidget from './components/TechnicalAnalysisWidget'
 import TickerWidget from './components/TickerWidget'
 import NewsWidget from './components/NewsWidget'
+import { Capacitor, CapacitorHttp } from '@capacitor/core'
+import { App as NativeApp } from '@capacitor/app'
+import { Share } from '@capacitor/share'
+import { searchKnownSymbols } from './symbols'
 
 type WatchlistItem = { label: string; symbol: string }
 type WatchlistTab = { id: string; name: string; items: WatchlistItem[] }
@@ -28,6 +32,31 @@ const STORAGE_RECENTS = 'appBorsa:recents'
 const STORAGE_THEME = 'appBorsa:theme'
 const STORAGE_MULTI = 'appBorsa:multiSymbols'
 const MAX_RECENTS = 8
+
+// true dentro l'APK Android, false nel browser
+const IS_NATIVE = Capacitor.isNativePlatform()
+// Indirizzo pubblico del sito, usato per i link condivisi dall'APK
+const PUBLIC_URL = 'https://micmax1000-afk.github.io/app-borsa/'
+
+/**
+ * Ricerca online sul servizio di TradingView (best-effort).
+ * Nell'APK la richiesta è fatta dal codice nativo, quindi non è soggetta
+ * al blocco CORS del browser. Nel browser invece di solito è bloccata.
+ * Se non risponde, resta comunque l'elenco titoli integrato.
+ */
+async function fetchSymbolSearch(text: string): Promise<any> {
+  const url = `https://symbol-search.tradingview.com/symbol_search/v3/?text=${encodeURIComponent(
+    text
+  )}&hl=1&lang=it&domain=production`
+  if (IS_NATIVE) {
+    const res = await CapacitorHttp.get({ url })
+    if (res.status < 200 || res.status >= 300) throw new Error(`HTTP ${res.status}`)
+    return typeof res.data === 'string' ? JSON.parse(res.data) : res.data
+  }
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
 
 function makeId() {
   return Math.random().toString(36).slice(2, 9)
@@ -172,6 +201,28 @@ function App() {
     }
   }, [])
 
+  // Tasto "Indietro" di Android: chiude il pannello aperto, torna dal
+  // multi-grafico al grafico, altrimenti manda l'app in background
+  const backStateRef = useRef({ showSearch, showWatchlist, showSignal, showNews, mainView })
+  backStateRef.current = { showSearch, showWatchlist, showSignal, showNews, mainView }
+  useEffect(() => {
+    if (!IS_NATIVE) return
+    const listener = NativeApp.addListener('backButton', () => {
+      const st = backStateRef.current
+      if (st.showSearch) {
+        setShowSearch(false)
+        setQuery('')
+      } else if (st.showWatchlist) setShowWatchlist(false)
+      else if (st.showSignal) setShowSignal(false)
+      else if (st.showNews) setShowNews(false)
+      else if (st.mainView !== 'chart') setMainView('chart')
+      else NativeApp.minimizeApp()
+    })
+    return () => {
+      listener.then((l) => l.remove())
+    }
+  }, [])
+
   // Tasto Esc chiude il pannello aperto
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -206,17 +257,12 @@ function App() {
       setRemoteResults([])
       return
     }
-    const controller = new AbortController()
+    let cancelled = false
     setSearching(true)
     const timer = setTimeout(() => {
-      fetch(
-        `https://symbol-search.tradingview.com/symbol_search/v3/?text=${encodeURIComponent(
-          q
-        )}&hl=1&lang=it&domain=production`,
-        { signal: controller.signal }
-      )
-        .then((res) => res.json())
+      fetchSymbolSearch(q)
         .then((data) => {
+          if (cancelled) return
           const symbols = (data?.symbols ?? data ?? [])
             .slice(0, 12)
             .map((item: any) => {
@@ -231,15 +277,40 @@ function App() {
             .filter((item: RemoteResult) => item.symbol)
           setRemoteResults(symbols)
         })
-        .catch(() => setRemoteResults([]))
-        .finally(() => setSearching(false))
+        .catch(() => {
+          if (!cancelled) setRemoteResults([])
+        })
+        .finally(() => {
+          if (!cancelled) setSearching(false)
+        })
     }, 300)
 
     return () => {
+      cancelled = true
       clearTimeout(timer)
-      controller.abort()
     }
   }, [query])
+
+  // Risultati extra: elenco integrato + ricerca online, senza doppioni
+  // e senza i titoli già presenti nella watchlist
+  const otherResults = useMemo(() => {
+    const q = query.trim()
+    if (!q) return []
+    const inList = new Set(activeList.items.map((i) => i.symbol))
+    const seen = new Set<string>()
+    const merged: RemoteResult[] = []
+    const local = searchKnownSymbols(q).map((s) => ({
+      symbol: s.symbol,
+      label: s.label,
+      exchange: s.symbol.split(':')[0]
+    }))
+    for (const r of [...local, ...remoteResults]) {
+      if (inList.has(r.symbol) || seen.has(r.symbol)) continue
+      seen.add(r.symbol)
+      merged.push(r)
+    }
+    return merged.slice(0, 25)
+  }, [query, remoteResults, activeList])
 
   const currentLabel =
     activeList.items.find((item) => item.symbol === symbol)?.label ?? labelFromSymbol(symbol)
@@ -358,7 +429,6 @@ function App() {
     changeSymbolBy(delta < 0 ? 1 : -1)
   }
 
-  const isInWatchlist = (sym: string) => activeList.items.some((item) => item.symbol === sym)
 
   const cycleMultiSlot = (slotIndex: number) => {
     const pool = activeList.items.length > 0 ? activeList.items.map((i) => i.symbol) : DEFAULT_ITEMS.map((i) => i.symbol)
@@ -380,7 +450,7 @@ function App() {
   }
 
   const shareSymbol = async () => {
-    const url = new URL(window.location.href)
+    const url = new URL(IS_NATIVE ? PUBLIC_URL : window.location.href)
     url.search = ''
     url.hash = ''
     url.searchParams.set('s', symbol)
@@ -390,7 +460,9 @@ function App() {
       url: url.toString()
     }
     try {
-      if (navigator.share) {
+      if (IS_NATIVE) {
+        await Share.share({ ...shareData, dialogTitle: 'Condividi' })
+      } else if (navigator.share) {
         await navigator.share(shareData)
       } else {
         await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
@@ -689,20 +761,16 @@ function App() {
             </li>
           ))}
 
-          {query.trim().length >= 2 && (
+          {(otherResults.length > 0 || (searching && query.trim().length >= 2)) && (
             <li className="search-section-title">
-              {searching ? 'Ricerca in corso…' : 'Altri risultati'}
+              {searching && otherResults.length === 0 ? 'Ricerca in corso…' : 'Altri risultati'}
             </li>
           )}
-          {remoteResults
-            .filter((r) => !isInWatchlist(r.symbol))
-            .map((item) => (
+          {otherResults.map((item) => (
               <li key={item.symbol} className="search-result-row">
                 <button className="row-main" onClick={() => selectSymbol(item.symbol)}>
                   <span className="watchlist-item-label">{item.label}</span>
-                  <span className="watchlist-item-symbol">
-                    {item.symbol} · {item.exchange}
-                  </span>
+                  <span className="watchlist-item-symbol">{item.symbol}</span>
                 </button>
                 <button
                   className="watchlist-add"
@@ -717,7 +785,7 @@ function App() {
               </li>
             ))}
 
-          {query.trim() && filteredWatchlist.length === 0 && remoteResults.length === 0 && !searching && (
+          {query.trim() && filteredWatchlist.length === 0 && otherResults.length === 0 && !searching && (
             <li className="search-hint">
               Premi Invio per caricare direttamente "{query}"
             </li>
