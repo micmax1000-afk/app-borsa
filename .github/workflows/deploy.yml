@@ -28,7 +28,7 @@ jobs:
           cache: npm
 
       - name: Installa le dipendenze
-        run: npm install
+        run: npm ci
 
       - name: Build del progetto
         run: npm run build

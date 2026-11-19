@@ -65,6 +65,13 @@ function loadActiveListId(lists: WatchlistTab[]): string {
 }
 
 function loadLastSymbol(fallback: string): string {
+  // Link condiviso: ?s=BORSA:TICKER ha la precedenza
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('s')
+    if (fromUrl && /^[A-Z0-9_.!:\-/]+$/i.test(fromUrl)) return fromUrl.toUpperCase()
+  } catch {
+    // ignora
+  }
   try {
     const raw = localStorage.getItem(STORAGE_LAST_SYMBOL)
     if (raw) return raw
@@ -88,6 +95,7 @@ function loadTheme(): Theme {
   try {
     const raw = localStorage.getItem(STORAGE_THEME)
     if (raw === 'light' || raw === 'dark') return raw
+    if (window.matchMedia?.('(prefers-color-scheme: light)').matches) return 'light'
   } catch {
     // ignora
   }
@@ -107,13 +115,17 @@ function loadMultiSymbols(fallback: string[]): string[] {
   return fallback
 }
 
+function stripTags(text: string): string {
+  return text.replace(/<\/?em>/g, '')
+}
+
 function labelFromSymbol(symbol: string): string {
   return symbol.includes(':') ? symbol.split(':')[1] : symbol
 }
 
 function App() {
   const [lists, setLists] = useState<WatchlistTab[]>(loadLists)
-  const [activeListId, setActiveListId] = useState<string>(() => loadActiveListId(loadLists()))
+  const [activeListId, setActiveListId] = useState<string>(() => loadActiveListId(lists))
   const activeList = lists.find((l) => l.id === activeListId) ?? lists[0]
 
   const [symbol, setSymbolState] = useState(() => loadLastSymbol(activeList.items[0]?.symbol ?? DEFAULT_ITEMS[0].symbol))
@@ -150,6 +162,29 @@ function App() {
     localStorage.setItem(STORAGE_LAST_SYMBOL, symbol)
   }, [symbol])
 
+  // Rimuove ?s= dall'indirizzo dopo averlo letto, così un ricaricamento
+  // non riporta indietro al simbolo del link
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('s')) {
+      url.searchParams.delete('s')
+      window.history.replaceState(null, '', url.toString())
+    }
+  }, [])
+
+  // Tasto Esc chiude il pannello aperto
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      setShowSearch(false)
+      setShowWatchlist(false)
+      setShowSignal(false)
+      setShowNews(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   useEffect(() => {
     localStorage.setItem(STORAGE_RECENTS, JSON.stringify(recents))
   }, [recents])
@@ -184,11 +219,15 @@ function App() {
         .then((data) => {
           const symbols = (data?.symbols ?? data ?? [])
             .slice(0, 12)
-            .map((item: any) => ({
-              symbol: `${item.exchange}:${item.symbol}`,
-              label: (item.description || item.symbol || '').replace(/<\/?em>/g, ''),
-              exchange: item.exchange || ''
-            }))
+            .map((item: any) => {
+              const ticker = stripTags(item.symbol || '')
+              const exchange = stripTags(item.prefix || item.exchange || '')
+              return {
+                symbol: ticker ? (exchange ? `${exchange}:${ticker}` : ticker).toUpperCase() : '',
+                label: stripTags(item.description || ticker),
+                exchange: stripTags(item.exchange || '')
+              }
+            })
             .filter((item: RemoteResult) => item.symbol)
           setRemoteResults(symbols)
         })
@@ -341,15 +380,20 @@ function App() {
   }
 
   const shareSymbol = async () => {
+    const url = new URL(window.location.href)
+    url.search = ''
+    url.hash = ''
+    url.searchParams.set('s', symbol)
     const shareData = {
       title: 'App Borsa',
-      text: `Guarda ${currentLabel} (${symbol}) su App Borsa`
+      text: `Guarda ${currentLabel} (${symbol}) su App Borsa`,
+      url: url.toString()
     }
     try {
       if (navigator.share) {
         await navigator.share(shareData)
       } else {
-        await navigator.clipboard.writeText(shareData.text)
+        await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
         window.alert('Copiato negli appunti')
       }
     } catch {
@@ -397,6 +441,13 @@ function App() {
                   <span>{labelFromSymbol(sym)}</span>
                   <button
                     className="multi-cycle-btn"
+                    onClick={() => selectSymbol(sym)}
+                    aria-label={`Apri ${labelFromSymbol(sym)} a schermo intero`}
+                  >
+                    ⤢
+                  </button>
+                  <button
+                    className="multi-cycle-btn"
                     onClick={(e) => {
                       e.stopPropagation()
                       cycleMultiSlot(i)
@@ -406,8 +457,8 @@ function App() {
                     ⟳
                   </button>
                 </div>
-                <div className="multi-cell-chart" onClick={() => selectSymbol(sym)}>
-                  <TradingViewWidget symbol={sym} theme={theme} />
+                <div className="multi-cell-chart">
+                  <TradingViewWidget symbol={sym} theme={theme} compact />
                 </div>
               </div>
             ))}
@@ -497,7 +548,6 @@ function App() {
                 key={l.id}
                 className={`list-tab ${l.id === activeListId ? 'active' : ''}`}
                 onClick={() => setActiveListId(l.id)}
-                onDoubleClick={() => deleteList(l.id)}
               >
                 {l.name}
               </button>
@@ -507,7 +557,9 @@ function App() {
             </button>
           </div>
           {lists.length > 1 && (
-            <p className="list-hint">Doppio tocco su una scheda per eliminarla</p>
+            <button className="list-delete" onClick={() => deleteList(activeList.id)}>
+              Elimina la lista "{activeList.name}"
+            </button>
           )}
 
           <ul className="watchlist-list">
@@ -532,7 +584,7 @@ function App() {
                   </button>
                 </div>
                 <button
-                  className={item.symbol === symbol ? 'active' : ''}
+                  className={`row-main ${item.symbol === symbol ? 'active' : ''}`}
                   onClick={() => selectSymbol(item.symbol)}
                 >
                   <span className="watchlist-item-label">{item.label}</span>
@@ -616,7 +668,7 @@ function App() {
               <li className="search-section-title">Recenti</li>
               {recentItems.map((item) => (
                 <li key={`recent-${item.symbol}`}>
-                  <button onClick={() => selectSymbol(item.symbol)}>
+                  <button className="row-main" onClick={() => selectSymbol(item.symbol)}>
                     <span className="watchlist-item-label">{item.label}</span>
                     <span className="watchlist-item-symbol">{item.symbol}</span>
                   </button>
@@ -630,7 +682,7 @@ function App() {
           )}
           {filteredWatchlist.map((item) => (
             <li key={item.symbol} className="search-result-row">
-              <button onClick={() => selectSymbol(item.symbol)}>
+              <button className="row-main" onClick={() => selectSymbol(item.symbol)}>
                 <span className="watchlist-item-label">{item.label}</span>
                 <span className="watchlist-item-symbol">{item.symbol}</span>
               </button>
@@ -646,7 +698,7 @@ function App() {
             .filter((r) => !isInWatchlist(r.symbol))
             .map((item) => (
               <li key={item.symbol} className="search-result-row">
-                <button onClick={() => selectSymbol(item.symbol)}>
+                <button className="row-main" onClick={() => selectSymbol(item.symbol)}>
                   <span className="watchlist-item-label">{item.label}</span>
                   <span className="watchlist-item-symbol">
                     {item.symbol} · {item.exchange}
