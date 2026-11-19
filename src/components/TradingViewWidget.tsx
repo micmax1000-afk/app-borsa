@@ -3,6 +3,8 @@ import { useEffect, useRef, memo } from 'react'
 interface TradingViewWidgetProps {
   symbol: string
   theme?: 'light' | 'dark'
+  /** Versione leggera per la griglia multi-grafico: niente indicatori né barre */
+  compact?: boolean
 }
 
 /**
@@ -13,7 +15,7 @@ interface TradingViewWidgetProps {
  * mobili, Stocastico, ecc.), disegno di trendline, più timeframe,
  * confronto simboli, tutto gestito dall'utente direttamente nel grafico.
  */
-function TradingViewWidget({ symbol, theme = 'dark' }: TradingViewWidgetProps) {
+function TradingViewWidget({ symbol, theme = 'dark', compact = false }: TradingViewWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -36,19 +38,18 @@ function TradingViewWidget({ symbol, theme = 'dark' }: TradingViewWidgetProps) {
       style: '1',
       locale: 'it',
       enable_publishing: false,
-      allow_symbol_change: true,
       // Indicatori precaricati all'apertura del grafico; l'utente può
       // aggiungerne/rimuoverne altri dal menu "Indicatori" nel widget
-      studies: [
-        'STD;RSI',
-        'STD;MACD',
-        'STD;Bollinger_Bands'
-      ],
+      studies: compact ? [] : ['STD;RSI', 'STD;MACD', 'STD;Bollinger_Bands'],
+      hide_top_toolbar: compact,
+      hide_side_toolbar: compact,
+      hide_legend: compact,
+      allow_symbol_change: !compact,
       support_host: 'https://www.tradingview.com'
     })
 
     containerRef.current.appendChild(script)
-  }, [symbol, theme])
+  }, [symbol, theme, compact])
 
   return (
     <div className="tradingview-widget-container" ref={containerRef}>

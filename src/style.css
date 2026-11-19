@@ -190,8 +190,9 @@ body {
   gap: 4px;
 }
 
-.watchlist-list button,
-.search-results button {
+.row-main {
+  flex: 1 1 auto;
+  min-width: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -207,17 +208,20 @@ body {
   text-align: left;
 }
 
-.watchlist-list button.active {
+.row-main.active {
   background: #1e222d;
 }
 
-.watchlist-list button:active,
-.search-results button:active {
+.row-main:active {
   background: #1e222d;
 }
 
 .watchlist-item-label {
   font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .watchlist-item-symbol {
@@ -383,8 +387,7 @@ body.theme-light .search-overlay {
 
 body.theme-light .topbar-symbol,
 body.theme-light .icon-btn,
-body.theme-light .watchlist-list button,
-body.theme-light .search-results button,
+body.theme-light .row-main,
 body.theme-light .signal-close,
 body.theme-light .list-tab {
   color: #131722;
@@ -394,16 +397,22 @@ body.theme-light .topbar-symbol-full,
 body.theme-light .watchlist-item-symbol,
 body.theme-light .search-section-title,
 body.theme-light .search-hint,
-body.theme-light .signal-disclaimer,
-body.theme-light .list-hint {
+body.theme-light .signal-disclaimer {
   color: #6a6d78;
 }
 
-body.theme-light .watchlist-list button.active,
-body.theme-light .watchlist-list button:active,
-body.theme-light .search-results button:active,
-body.theme-light .list-tab.active {
+body.theme-light .row-main.active,
+body.theme-light .row-main:active {
   background: #e9ecf5;
+}
+
+body.theme-light .list-tab {
+  background: #e9ecf5;
+}
+
+body.theme-light .list-tab.active {
+  background: #2962ff;
+  color: #fff;
 }
 
 body.theme-light .search-header input {
@@ -445,12 +454,20 @@ body.theme-light .multi-cell {
 .multi-cell-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 2px;
   padding: 3px 6px;
   font-size: 11px;
   font-weight: 600;
   background: #1e222d;
   flex-shrink: 0;
+}
+
+.multi-cell-header span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .multi-cycle-btn {
@@ -497,11 +514,15 @@ body.theme-light .multi-cell {
   font-weight: 700;
 }
 
-.list-hint {
-  margin: 0;
-  padding: 0 10px 6px;
-  font-size: 10px;
-  color: #787b86;
+.list-delete {
+  align-self: flex-start;
+  margin: 0 10px 6px;
+  padding: 2px 0;
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: #ef5350;
+  cursor: pointer;
 }
 
 /* Riordino watchlist */
@@ -530,4 +551,11 @@ body.theme-light .multi-cell {
 .news-panel {
   height: 65%;
   max-height: 520px;
+}
+
+/* Focus visibile per chi naviga da tastiera */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #2962ff;
+  outline-offset: 1px;
 }

@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico'],
+      includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'App Borsa - Analisi Tecnica',
         short_name: 'App Borsa',
